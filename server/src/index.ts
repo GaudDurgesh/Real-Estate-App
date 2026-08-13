@@ -7,6 +7,9 @@ import morgan from "morgan";
 import { authMiddleware } from "./middleware/authMiddleware";
 
 /* ROUTES IMPORT */
+import applicationRoutes from "./routes/applicationRoute"
+import leaseRoutes from "./routes/leaseRoute";
+import propertyRoutes from "./routes/propertyRoute"
 import tenantRoutes from "./routes/tenantRoute";
 import managerRoutes from "./routes/managerRoute";
 
@@ -30,8 +33,11 @@ app.get("/",  (req, res) => {
 });
 
 
-app.use("/tenants", authMiddleware(["tenant"]),tenantRoutes)
-app.use("/managers", authMiddleware(["manager"]),managerRoutes)
+app.use("/applications", applicationRoutes)
+app.use("/leases", leaseRoutes);
+app.use("/properties", propertyRoutes);
+app.use("/tenants", authMiddleware(["tenant"]),tenantRoutes);
+app.use("/managers", authMiddleware(["manager"]),managerRoutes);
 
 /* SERVER */
 
