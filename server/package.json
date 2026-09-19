@@ -21,6 +21,7 @@
     "@prisma/adapter-pg": "^7.9.1",
     "@prisma/client": "^6.19.3",
     "@terraformer/wkt": "^2.2.2",
+    "aws-jwt-verify": "^5.2.1",
     "axios": "^1.18.1",
     "body-parser": "^2.3.0",
     "cors": "^2.8.6",

@@ -91,7 +91,7 @@ export const getProperties = async (
           whereConditions.push(Prisma.sql`EXISTS (
               SELECT 1 FROM "Lease" l 
               WHERE l."propertyId" = p.id 
-              AND l."startDate" <= ${date.toISOString()}
+              AND l."startDate" <= ${date.toISOString()}::timestamp
             )`);
         }
       }
@@ -100,15 +100,14 @@ export const getProperties = async (
     if (latitude && longitude) {
       const lat = parseFloat(latitude as string);
       const lng = parseFloat(longitude as string);
-      const radiusInKilometers = 1000;
-      const degrees = radiusInKilometers / 111; // Converts kilometers to degrees
+      const radiusInKilometers = 50;
 
       whereConditions.push(
         Prisma.sql`ST_DWithin(
-          l.coordinates::geometry,
-          ST_SetSRID(ST_MakePoint(${lng}, ${lat}), 4326),
-          ${degrees}
-        )`,
+      l.coordinates,
+      ST_SetSRID(ST_MakePoint(${lng}, ${lat}), 4326)::geography,
+      ${radiusInKilometers * 1000}
+    )`,
       );
     }
 
@@ -158,6 +157,11 @@ export const getProperty = async (
         location: true,
       },
     });
+
+    if (!property) {
+      res.status(404).json({ message: "Property not found" });
+      return;
+    }
 
     if (property) {
       const coordinates: { coordinates: string }[] =

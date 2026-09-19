@@ -6,7 +6,7 @@ import Navbar from "@/components/Navbar";
 import { usePathname, useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
 
-const layout = ({ children }: { children: React.ReactNode }) => {
+const NonDashboardLayout  = ({ children }: { children: React.ReactNode }) => {
   const { data: authUser, isLoading: authLoading } = useGetAuthUserQuery();
   const router = useRouter();
     const pathname = usePathname();
@@ -46,4 +46,4 @@ const layout = ({ children }: { children: React.ReactNode }) => {
   );
 };
 
-export default layout;
+export default NonDashboardLayout ;

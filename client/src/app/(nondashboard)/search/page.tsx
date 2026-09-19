@@ -1,4 +1,4 @@
-"use client"
+"use client";
 
 import { NAVBAR_HEIGHT } from "@/lib/constants";
 import { useAppDispatch, useAppSelector } from "@/state/redux";
@@ -18,8 +18,6 @@ const SearchPage = () => {
     (state) => state.global.isFiltersFullOpen,
   );
 
-
-
   useEffect(() => {
     const initialFilters = Array.from(searchParams.entries()).reduce(
       (acc: any, [key, value]) => {
@@ -27,20 +25,20 @@ const SearchPage = () => {
           acc[key] = value.split(",").map((v) => (v === "" ? null : Number(v)));
         } else if (key === "coordinates") {
           acc[key] = value.split(",").map(Number);
+        } else if (key === "amenities") {
+          acc[key] = value === "any" ? [] : value.split(",").filter(Boolean);
         } else {
           acc[key] = value === "any" ? null : value;
         }
 
         return acc;
       },
-      {}
+      {},
     );
 
     const cleanedFilters = cleanParams(initialFilters);
     dispatch(setFilters(cleanedFilters));
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
-
-
 
   return (
     <div
@@ -49,7 +47,7 @@ const SearchPage = () => {
         height: `calc(100vh - ${NAVBAR_HEIGHT}px)`,
       }}
     >
-      <FiltersBar  />
+      <FiltersBar />
       <div className="flex justify-between flex-1 overflow-hidden gap-3 mb-5">
         <div
           className={`h-full overflow-auto transition-all duration-300 ease-in-out ${

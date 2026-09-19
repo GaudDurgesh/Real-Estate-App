@@ -1,10 +1,12 @@
+import "dotenv/config";
 import { Request, Response, NextFunction } from "express";
-import jwt, { JwtPayload } from "jsonwebtoken";
+import { CognitoJwtVerifier } from "aws-jwt-verify";
 
-interface DecodedToken extends JwtPayload {
-  sub: string;
-  "custom: role"?: string;
-}
+const verifier = CognitoJwtVerifier.create({
+  userPoolId: process.env.AWS_COGNITO_USER_POOL_ID!,
+  tokenUse: "id",
+  clientId: process.env.AWS_COGNITO_USER_POOL_CLIENT_ID!,
+});
 
 declare global {
   namespace Express {
@@ -18,7 +20,11 @@ declare global {
 }
 
 export const authMiddleware = (allowedRoles: string[]) => {
-  return (req: Request, res: Response, next: NextFunction): void => {
+  return async (
+    req: Request,
+    res: Response,
+    next: NextFunction,
+  ): Promise<void> => {
     const token = req.headers.authorization?.split(" ")[1];
 
     if (!token) {
@@ -27,8 +33,12 @@ export const authMiddleware = (allowedRoles: string[]) => {
     }
 
     try {
-      const decoded = jwt.decode(token) as DecodedToken;
-      const userRole = decoded["custom:role"] || "";
+      const decoded = await verifier.verify(token);
+
+      const userRole =
+        typeof decoded["custom:role"] === "string"
+          ? decoded["custom:role"]
+          : "";
       req.user = {
         id: decoded.sub,
         role: userRole,
@@ -40,8 +50,8 @@ export const authMiddleware = (allowedRoles: string[]) => {
         return;
       }
     } catch (error) {
-      console.error("Failed to decode token:", error);
-      res.status(400).json({ message: "Invalid token" });
+      console.error("Failed to verify token:", error);
+      res.status(401).json({ message: "Invalid or expired token" });
       return;
     }
     next();

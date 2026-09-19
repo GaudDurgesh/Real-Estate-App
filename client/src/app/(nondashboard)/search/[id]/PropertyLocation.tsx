@@ -8,7 +8,7 @@ import React, { useEffect, useRef } from "react";
 
 mapboxgl.accessToken = process.env.NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN as string;
 
-const PropertyLocation = () => {
+const PropertyLocation = ({ propertyId }: PropertyDetailsProps) => {
   const {
     data: property,
     isError,

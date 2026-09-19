@@ -6,13 +6,14 @@ import {
 } from "@/state";
 import { useAppSelector } from "@/state/redux";
 import { usePathname, useRouter } from "next/navigation";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useDispatch } from "react-redux";
 import { debounce } from "lodash";
 import { cleanParams, cn, formatPriceValue } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Filter, Grid, List, Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
+import { toast } from "sonner";
 import {
   Select,
   SelectContent,
@@ -33,6 +34,10 @@ const FiltersBar = () => {
 
   const viewMode = useAppSelector((state) => state.global.viewMode);
   const [searchInput, setSearchInput] = useState(filters.location);
+
+  useEffect(() => {
+    setSearchInput(filters.location);
+  }, [filters.location]);
 
   const updateURL = debounce((newFilters: FiltersState) => {
     const cleanFilters = cleanParams(newFilters);
@@ -73,28 +78,39 @@ const FiltersBar = () => {
     updateURL(newFilters);
   };
 
-
   const handleLocationSearch = async () => {
     try {
       const response = await fetch(
         `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(
-          searchInput
+          searchInput,
         )}.json?access_token=${
           process.env.NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN
-        }&fuzzyMatch=true`
+        }&fuzzyMatch=true`,
       );
       const data = await response.json();
+      if (!response.ok) {
+        toast.error("Location search failed. Please try again.");
+        return;
+      }
+
+      if (!data.features?.length) {
+        toast.error("Location not found. Please check the spelling.");
+        return;
+      }
       if (data.features && data.features.length > 0) {
         const [lng, lat] = data.features[0].center;
-        dispatch(
-          setFilters({
-            location: searchInput,
-            coordinates: [lng, lat],
-          })
-        );
+        const newFilters: FiltersState = {
+          ...filters,
+          location: searchInput,
+          coordinates: [lng, lat],
+        };
+
+        dispatch(setFilters(newFilters));
+        updateURL(newFilters);
       }
     } catch (err) {
       console.error("Error search location:", err);
+      toast.error("Location search failed. Please try again.");
     }
   };
 
@@ -125,7 +141,7 @@ const FiltersBar = () => {
             className="w-40 rounded-l-xl rounded-r-none border-primary-400 border-r-0"
           />
           <Button
-            onClick={handleLocationSearch }
+            onClick={handleLocationSearch}
             className={`rounded-r-xl rounded-l-none border-l-none border-primary-400 shadow-none 
               border hover:bg-primary-700 hover:text-primary-50`}
           >
@@ -178,8 +194,6 @@ const FiltersBar = () => {
               ))}
             </SelectContent>
           </Select>
-
-          
         </div>
         {/* Beds and Baths */}
         <div className="flex gap-1">
@@ -238,14 +252,14 @@ const FiltersBar = () => {
           </SelectContent>
         </Select>
       </div>
-       {/* View Mode */}
+      {/* View Mode */}
       <div className="flex justify-between items-center gap-4 p-2">
         <div className="flex border rounded-xl">
           <Button
             variant="ghost"
             className={cn(
               "px-3 py-1 rounded-none rounded-l-xl hover:bg-primary-600 hover:text-primary-50",
-              viewMode === "list" ? "bg-primary-700 text-primary-50" : ""
+              viewMode === "list" ? "bg-primary-700 text-primary-50" : "",
             )}
             onClick={() => dispatch(setViewMode("list"))}
           >
@@ -255,7 +269,7 @@ const FiltersBar = () => {
             variant="ghost"
             className={cn(
               "px-3 py-1 rounded-none rounded-r-xl hover:bg-primary-600 hover:text-primary-50",
-              viewMode === "grid" ? "bg-primary-700 text-primary-50" : ""
+              viewMode === "grid" ? "bg-primary-700 text-primary-50" : "",
             )}
             onClick={() => dispatch(setViewMode("grid"))}
           >
@@ -263,7 +277,7 @@ const FiltersBar = () => {
           </Button>
         </div>
       </div>
-   </div>
+    </div>
   );
 };
 

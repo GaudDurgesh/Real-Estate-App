@@ -3,7 +3,7 @@
 import { FiltersState, initialState, setFilters } from "@/state";
 import { useAppSelector } from "@/state/redux";
 import { usePathname, useRouter } from "next/navigation";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useDispatch } from "react-redux";
 import { debounce } from "lodash";
 import { cleanParams, cn, formatEnumString } from "@/lib/utils";
@@ -26,7 +26,9 @@ const FiltersFull = () => {
   const router = useRouter();
   const pathname = usePathname();
   const filters = useAppSelector((state) => state.global.filters);
-  const [localFilters, setLocalFilters] = useState(initialState.filters);
+  const [localFilters, setLocalFilters] = useState(filters);
+
+  
   const isFiltersFullOpen = useAppSelector(
     (state) => state.global.isFiltersFullOpen,
   );
@@ -87,6 +89,11 @@ const FiltersFull = () => {
     }
   };
 
+  useEffect(() => {
+  if (isFiltersFullOpen) {
+    setLocalFilters(filters);
+  }
+}, [filters, isFiltersFullOpen]);
 
   if (!isFiltersFullOpen) return null;
 
@@ -99,7 +106,7 @@ const FiltersFull = () => {
           <div className="flex items-center">
             <Input
               placeholder="Enter location"
-              value={filters.location}
+              value={localFilters.location}
               onChange={(e) =>
                 setLocalFilters((prev) => ({
                   ...prev,
