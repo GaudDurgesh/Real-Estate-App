@@ -18,7 +18,7 @@ const ApplicationModal = ({
   onClose,
   propertyId,
 }: ApplicationModalProps) => {
-  const [createApplication] = useCreateApplicationMutation();
+  const [createApplication, { isLoading }] = useCreateApplicationMutation();
   const { data: authUser } = useGetAuthUserQuery();
 
   const form = useForm<ApplicationFormData>({
@@ -39,15 +39,20 @@ const ApplicationModal = ({
       return;
     }
 
-    await createApplication({
+    const result = await createApplication({
       ...data,
       applicationDate: new Date().toISOString(),
       status: "Pending",
       propertyId: propertyId,
       tenantCognitoId: authUser.cognitoInfo.userId,
     });
+
+    if ("error" in result) {
+      return;
+    }
+
     onClose();
-  };
+  }
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -81,8 +86,12 @@ const ApplicationModal = ({
               type="textarea"
               placeholder="Enter any additional information"
             />
-            <Button type="submit" className="bg-primary-700 text-white w-full">
-              Submit Application
+            <Button
+              type="submit"
+              disabled={isLoading}
+              className="bg-primary-700 text-white w-full"
+            >
+              {isLoading ? "Submitting..." : "Submit Application"}
             </Button>
           </form>
         </Form>

@@ -20,6 +20,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
+import { toast } from "sonner";
 
 const FiltersFull = () => {
   const dispatch = useDispatch();
@@ -28,7 +29,7 @@ const FiltersFull = () => {
   const filters = useAppSelector((state) => state.global.filters);
   const [localFilters, setLocalFilters] = useState(filters);
 
-  
+
   const isFiltersFullOpen = useAppSelector(
     (state) => state.global.isFiltersFullOpen,
   );
@@ -47,9 +48,13 @@ const FiltersFull = () => {
     router.push(`${pathname}?${updatedSearchParams.toString()}`);
   });
 
-  const handleSubmit = () => {
-    dispatch(setFilters(localFilters));
-    updateURL(localFilters);
+  const handleSubmit = async () => {
+    const updatedFilters = await handleLocationSearch();
+
+    if (!updatedFilters) return;
+
+    dispatch(setFilters(updatedFilters));
+    updateURL(updatedFilters);
   };
 
   const handleReset = () => {
@@ -58,7 +63,7 @@ const FiltersFull = () => {
     updateURL(initialState.filters);
   };
 
-   const handleAmenityChange = (amenity: AmenityEnum) => {
+  const handleAmenityChange = (amenity: AmenityEnum) => {
     setLocalFilters((prev) => ({
       ...prev,
       amenities: prev.amenities.includes(amenity)
@@ -67,33 +72,49 @@ const FiltersFull = () => {
     }));
   };
 
-   const handleLocationSearch = async () => {
+  const handleLocationSearch = async () => {
     try {
       const response = await fetch(
         `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(
-          localFilters.location
-        )}.json?access_token=${
-          process.env.NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN
+          localFilters.location.trim()
+        )}.json?access_token=${process.env.NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN
         }&fuzzyMatch=true`
       );
-      const data = await response.json();
-      if (data.features && data.features.length > 0) {
-        const [lng, lat] = data.features[0].center;
-        setLocalFilters((prev) => ({
-          ...prev,
-          coordinates: [lng, lat],
-        }));
+
+      if (!response.ok) {
+        toast.error("Location search failed. Please try again.");
+        return null;
       }
+
+      const data = await response.json();
+
+      if (!data.features?.length) {
+        toast.error("Location not found. Please check the spelling.");
+        return null;
+      }
+
+      const [lng, lat] = data.features[0].center;
+
+      const updatedFilters: FiltersState = {
+        ...localFilters,
+        location: localFilters.location.trim(),
+        coordinates: [lng, lat],
+      };
+
+      setLocalFilters(updatedFilters);
+      return updatedFilters;
     } catch (err) {
-      console.error("Error search location:", err);
+      console.error("Error searching location:", err);
+      toast.error("Location search failed. Please try again.");
+      return null;
     }
   };
 
   useEffect(() => {
-  if (isFiltersFullOpen) {
-    setLocalFilters(filters);
-  }
-}, [filters, isFiltersFullOpen]);
+    if (isFiltersFullOpen) {
+      setLocalFilters(filters);
+    }
+  }, [filters, isFiltersFullOpen]);
 
   if (!isFiltersFullOpen) return null;
 
@@ -116,7 +137,7 @@ const FiltersFull = () => {
               className="rounded-l-xl rounded-r-none border-r-0"
             />
             <Button
-                onClick={handleLocationSearch}
+              onClick={handleLocationSearch}
               className="rounded-r-xl rounded-l-none border-l-none border-black shadow-none border hover:bg-primary-700 hover:text-primary-50"
             >
               <Search className="w-4 h-4" />
