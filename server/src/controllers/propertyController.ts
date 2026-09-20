@@ -198,6 +198,12 @@ export const createProperty = async (
   res: Response,
 ): Promise<void> => {
   try {
+    if (!req.user) {
+      res.status(401).json({ message: "Unauthorized" });
+      return;
+    }
+
+    const managerCognitoId = req.user.id;
     const files = req.files as Express.Multer.File[];
     const {
       address,
@@ -205,24 +211,28 @@ export const createProperty = async (
       state,
       country,
       postalCode,
-      managerCognitoId,
+      managerCognitoId: _ignoredManagerCognitoId,
       ...propertyData
     } = req.body;
+    
+    const fullAddress = [address, city, state, postalCode, country]
+      .map((value) => String(value ?? "").trim())
+      .filter(Boolean)
+      .join(", ");
 
     const geocodingUrl = `https://nominatim.openstreetmap.org/search?${new URLSearchParams(
       {
-        street: address,
-        city,
-        country,
-        postalcode: postalCode,
+        q: fullAddress,
         format: "json",
         limit: "1",
       },
     ).toString()}`;
+
     const geocodingResponse = await axios.get(geocodingUrl, {
       headers: {
-        "User-Agent": "HavenSpace (goodLuck4516@gmail.com",
+        "User-Agent": "HavenSpace (goodLuck4516@gmail.com)",
       },
+      timeout: 10000,
     });
 
     const result = geocodingResponse.data[0];

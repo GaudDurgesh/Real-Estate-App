@@ -38,7 +38,6 @@ export const api = createApi({
       queryFn: async (_, _queryApi, _extraoptions, fetchWithBQ) => {
         try {
           const session = await fetchAuthSession();
-          console.log("session: ", session);
           const { idToken } = session.tokens ?? {};
           const user = await getCurrentUser();
           const userRole = idToken?.payload["custom:role"] as string;
@@ -64,6 +63,19 @@ export const api = createApi({
             );
           }
 
+          if (userDetailsResponse.error) {
+            return { error: userDetailsResponse.error };
+          }
+
+          if (!userDetailsResponse.data) {
+            return {
+              error: {
+                status: "CUSTOM_ERROR",
+                error: "User profile could not be loaded",
+              },
+            };
+          }
+
           return {
             data: {
               cognitoInfo: { ...user },
@@ -74,6 +86,19 @@ export const api = createApi({
         } catch (error: any) {
           return { error: error.message || "Could not fetch user data" };
         }
+      },
+      providesTags: (result) => {
+        if (!result?.userInfo) return [];
+
+        return [
+          {
+            type:
+              result.userRole === "manager"
+                ? ("Managers" as const)
+                : ("Tenants" as const),
+            id: result.userInfo.id,
+          },
+        ];
       },
     }),
 
@@ -104,9 +129,9 @@ export const api = createApi({
       providesTags: (result) =>
         result
           ? [
-              ...result.map(({ id }) => ({ type: "Properties" as const, id })),
-              { type: "Properties", id: "LIST" },
-            ]
+            ...result.map(({ id }) => ({ type: "Properties" as const, id })),
+            { type: "Properties", id: "LIST" },
+          ]
           : [{ type: "Properties", id: "LIST" }],
       async onQueryStarted(_, { queryFulfilled }) {
         await withToast(queryFulfilled, {
@@ -141,9 +166,9 @@ export const api = createApi({
       providesTags: (result) =>
         result
           ? [
-              ...result.map(({ id }) => ({ type: "Properties" as const, id })),
-              { type: "Properties", id: "LIST" },
-            ]
+            ...result.map(({ id }) => ({ type: "Properties" as const, id })),
+            { type: "Properties", id: "LIST" },
+          ]
           : [{ type: "Properties", id: "LIST" }],
       async onQueryStarted(_, { queryFulfilled }) {
         await withToast(queryFulfilled, {
@@ -216,9 +241,9 @@ export const api = createApi({
       providesTags: (result) =>
         result
           ? [
-              ...result.map(({ id }) => ({ type: "Properties" as const, id })),
-              { type: "Properties", id: "LIST" },
-            ]
+            ...result.map(({ id }) => ({ type: "Properties" as const, id })),
+            { type: "Properties", id: "LIST" },
+          ]
           : [{ type: "Properties", id: "LIST" }],
       async onQueryStarted(_, { queryFulfilled }) {
         await withToast(queryFulfilled, {
@@ -227,7 +252,7 @@ export const api = createApi({
       },
     }),
 
-   updateManagerSettings: build.mutation<
+    updateManagerSettings: build.mutation<
       Manager,
       { cognitoId: string } & Partial<Manager>
     >({
@@ -244,7 +269,7 @@ export const api = createApi({
         });
       },
     }),
-    
+
 
     createProperty: build.mutation<Property, FormData>({
       query: (newProperty) => ({
@@ -265,7 +290,7 @@ export const api = createApi({
     }),
 
     // lease related enpoints
-    getLeases: build.query<Lease[], number>({
+    getLeases: build.query<Lease[], string>({
       query: () => "leases",
       providesTags: ["Leases"],
       async onQueryStarted(_, { queryFulfilled }) {
@@ -275,7 +300,10 @@ export const api = createApi({
       },
     }),
 
-    getPropertyLeases: build.query<Lease[], number>({
+    getPropertyLeases: build.query<
+      (Lease & { payments: Payment[] })[],
+      number
+    >({
       query: (propertyId) => `properties/${propertyId}/leases`,
       providesTags: ["Leases"],
       async onQueryStarted(_, { queryFulfilled }) {

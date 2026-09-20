@@ -31,7 +31,13 @@ export const createManager = async (
   res: Response,
 ): Promise<void> => {
   try {
-    const { cognitoId, name, email, phoneNumber } = req.body;
+    if (!req.user) {
+      res.status(401).json({ message: "Unauthorized" });
+      return;
+    }
+
+    const cognitoId = req.user.id;
+    const { name, email, phoneNumber } = req.body;
 
     const manager = await prisma.manager.create({
       data: {

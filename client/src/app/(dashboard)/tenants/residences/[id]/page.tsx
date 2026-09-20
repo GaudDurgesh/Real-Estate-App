@@ -200,11 +200,10 @@ const BillingHistory = ({ payments }: { payments: Payment[] }) => {
                 </TableCell>
                 <TableCell>
                   <span
-                    className={`px-2 py-1 rounded-full text-xs font-semibold border ${
-                      payment.paymentStatus === "Paid"
-                        ? "bg-green-100 text-green-800 border-green-300"
-                        : "bg-yellow-100 text-yellow-800 border-yellow-300"
-                    }`}
+                    className={`px-2 py-1 rounded-full text-xs font-semibold border ${payment.paymentStatus === "Paid"
+                      ? "bg-green-100 text-green-800 border-green-300"
+                      : "bg-yellow-100 text-yellow-800 border-yellow-300"
+                      }`}
                   >
                     {payment.paymentStatus === "Paid" ? (
                       <Check className="w-4 h-4 inline-block mr-1" />
@@ -233,29 +232,64 @@ const BillingHistory = ({ payments }: { payments: Payment[] }) => {
 
 const Residence = () => {
   const { id } = useParams();
-  const { data: authUser } = useGetAuthUserQuery();
+  const {
+    data: authUser,
+    isLoading: authLoading,
+    error: authError,
+  } = useGetAuthUserQuery();
   const {
     data: property,
     isLoading: propertyLoading,
     error: propertyError,
   } = useGetPropertyQuery(Number(id));
 
-  const { data: leases, isLoading: leasesLoading } = useGetLeasesQuery(
-    parseInt(authUser?.cognitoInfo?.userId || "0"),
-    { skip: !authUser?.cognitoInfo?.userId },
-  );
-  const { data: payments, isLoading: paymentsLoading } = useGetPaymentsQuery(
-    leases?.[0]?.id || 0,
-    { skip: !leases?.[0]?.id },
-  );
+  const tenantId = authUser?.cognitoInfo?.userId;
 
-  if (propertyLoading || leasesLoading || paymentsLoading) return <Loading />;
-  if (!property || propertyError) return <div>Error loading property</div>;
+  const {
+    currentData: leases,
+    isFetching: leasesLoading,
+    error: leasesError,
+  } = useGetLeasesQuery(tenantId || "", {
+    skip: !tenantId,
+  });
 
   const currentLease = leases?.find(
-    (lease) => lease.propertyId === property.id,
+    (lease) =>
+      lease.propertyId === Number(id) &&
+      lease.tenantCognitoId === tenantId,
   );
 
+  const {
+    currentData: payments,
+    isFetching: paymentsLoading,
+    error: paymentsError,
+  } = useGetPaymentsQuery(currentLease?.id ?? 0, {
+    skip: !currentLease,
+  });
+
+  if (authLoading || propertyLoading || leasesLoading || paymentsLoading) {
+    return <Loading />;
+  }
+
+  if (authError || !authUser) {
+    return <div>Error loading your account</div>;
+  }
+
+  if (propertyError || !property) {
+    return <div>Error loading property</div>;
+  }
+
+  if (leasesError) {
+    return <div>Error loading leases</div>;
+  }
+
+  if (!currentLease) {
+    return <div>No lease found for this property.</div>;
+  }
+
+  if (paymentsError) {
+    return <div>Error loading payments</div>;
+  }
   return (
     <div className="dashboard-container">
       <div className="w-full mx-auto">

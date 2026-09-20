@@ -8,22 +8,27 @@ export const listApplications = async (
   res: Response,
 ): Promise<void> => {
   try {
-    const { userId, userType } = req.query;
-
-    let whereClause = {};
-
-    if (userId && userType) {
-      if (userType === "tenant") {
-        whereClause = { tenantCognitoId: String(userId) };
-      } else if (userType === "manager") {
-        whereClause = {
-          property: {
-            managerCognitoId: String(userId),
-          },
-        };
-      }
+    if (!req.user) {
+      res.status(401).json({ message: "Unauthorized" });
+      return;
     }
 
+    const role = req.user.role.toLowerCase();
+
+    if (role !== "tenant" && role !== "manager") {
+      res.status(403).json({ message: "Access Denied" });
+      return;
+    }
+
+    const whereClause =
+      role === "tenant"
+        ? { tenantCognitoId: req.user.id }
+        : {
+          property: {
+            managerCognitoId: req.user.id,
+          },
+        };
+        
     const applications = await prisma.application.findMany({
       where: whereClause,
       include: {
@@ -79,10 +84,15 @@ export const createApplication = async (
   res: Response,
 ): Promise<void> => {
   try {
+    if (!req.user) {
+      res.status(401).json({ message: "Unauthorized" });
+      return;
+    }
+
+    const tenantCognitoId = req.user.id;
     const {
       applicationDate,
       propertyId,
-      tenantCognitoId,
       name,
       email,
       phoneNumber,
@@ -152,6 +162,18 @@ export const updateApplicationStatus = async (
 
     if (!application) {
       res.status(404).json({ message: "Application not found." });
+      return;
+    }
+
+    if (!req.user) {
+      res.status(401).json({ message: "Unauthorized" });
+      return;
+    }
+
+    if (application.property.managerCognitoId !== req.user.id) {
+      res.status(403).json({
+        message: "You can only manage applications for your own properties.",
+      });
       return;
     }
 

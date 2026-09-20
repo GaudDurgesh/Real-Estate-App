@@ -31,7 +31,13 @@ export const createTenant = async (
   res: Response,
 ): Promise<void> => {
   try {
-    const { cognitoId, name, email, phoneNumber } = req.body;
+    if (!req.user) {
+      res.status(401).json({ message: "Unauthorized" });
+      return;
+    }
+
+    const cognitoId = req.user.id;
+    const { name, email, phoneNumber } = req.body;
 
     const tenant = await prisma.tenant.create({
       data: {
@@ -168,7 +174,7 @@ export const removeFavoriteProperty = async (
     const propertyIdNumber = Number(propertyId);
 
     const updatedTenant = await prisma.tenant.update({
-      where: { cognitoId: cognitoId as string  },
+      where: { cognitoId: cognitoId as string },
       data: {
         favorites: {
           disconnect: { id: propertyIdNumber },
