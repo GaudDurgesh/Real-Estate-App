@@ -136,7 +136,7 @@ export const api = createApi({
       async onQueryStarted(_, { queryFulfilled }) {
         await withToast(queryFulfilled, {
           error: "Failed to fetch properties.",
-        });
+        }, false);
       },
     }),
 
@@ -146,7 +146,7 @@ export const api = createApi({
       async onQueryStarted(_, { queryFulfilled }) {
         await withToast(queryFulfilled, {
           error: "Failed to load property details.",
-        });
+        }, false);
       },
     }),
 
@@ -157,7 +157,7 @@ export const api = createApi({
       async onQueryStarted(_, { queryFulfilled }) {
         await withToast(queryFulfilled, {
           error: "Failed to load tenant profile.",
-        });
+        }, false);
       },
     }),
 
@@ -173,7 +173,7 @@ export const api = createApi({
       async onQueryStarted(_, { queryFulfilled }) {
         await withToast(queryFulfilled, {
           error: "Failed to fetch current residences.",
-        });
+        }, false);
       },
     }),
 
@@ -191,7 +191,7 @@ export const api = createApi({
         await withToast(queryFulfilled, {
           success: "Settings updated successfully!",
           error: "Failed to update settings.",
-        });
+        }, false);
       },
     }),
 
@@ -211,7 +211,7 @@ export const api = createApi({
         await withToast(queryFulfilled, {
           success: "Added to favorites!!",
           error: "Failed to add to favorites",
-        });
+        }, false);
       },
     }),
 
@@ -231,7 +231,7 @@ export const api = createApi({
         await withToast(queryFulfilled, {
           success: "Removed from favorites!",
           error: "Failed to remove from favorites.",
-        });
+        }, false);
       },
     }),
 
@@ -248,7 +248,7 @@ export const api = createApi({
       async onQueryStarted(_, { queryFulfilled }) {
         await withToast(queryFulfilled, {
           error: "Failed to load manager profile.",
-        });
+        }, false);
       },
     }),
 
@@ -266,7 +266,7 @@ export const api = createApi({
         await withToast(queryFulfilled, {
           success: "Settings updated successfully!",
           error: "Failed to update settings.",
-        });
+        }, false);
       },
     }),
 
@@ -285,7 +285,7 @@ export const api = createApi({
         await withToast(queryFulfilled, {
           success: "Property created successfully!",
           error: "Failed to create property.",
-        });
+        }, false);
       },
     }),
 
@@ -296,7 +296,7 @@ export const api = createApi({
       async onQueryStarted(_, { queryFulfilled }) {
         await withToast(queryFulfilled, {
           error: "Failed to fetch leases.",
-        });
+        }, false);
       },
     }),
 
@@ -309,7 +309,7 @@ export const api = createApi({
       async onQueryStarted(_, { queryFulfilled }) {
         await withToast(queryFulfilled, {
           error: "Failed to fetch property leases.",
-        });
+        }, false);
       },
     }),
 
@@ -319,7 +319,7 @@ export const api = createApi({
       async onQueryStarted(_, { queryFulfilled }) {
         await withToast(queryFulfilled, {
           error: "Failed to fetch payment info.",
-        });
+        }, false);
       },
     }),
 
@@ -343,7 +343,7 @@ export const api = createApi({
       async onQueryStarted(_, { queryFulfilled }) {
         await withToast(queryFulfilled, {
           error: "Failed to fetch applications.",
-        });
+        }, false);
       },
     }),
 
@@ -361,7 +361,7 @@ export const api = createApi({
         await withToast(queryFulfilled, {
           success: "Application status updated successfully!",
           error: "Failed to update application settings.",
-        });
+        }, false);
       },
     }),
 
@@ -376,7 +376,7 @@ export const api = createApi({
         await withToast(queryFulfilled, {
           success: "Application created successfully!",
           error: "Failed to create applications.",
-        });
+        }, false);
       },
     }),
 

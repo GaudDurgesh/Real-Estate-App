@@ -1,0 +1,437 @@
+/* ─── Reset ─────────────────────────────────────────── */
+.page,
+.page * {
+    box-sizing: border-box;
+}
+
+.page p,
+.page h1,
+.page h2,
+.page h3,
+.page table {
+    margin: 0;
+}
+
+/* ─── Page shell ─────────────────────────────────────── */
+.page {
+    min-height: 100vh;
+    padding: 28px 20px 48px;
+    background: #e8eaed;
+    color: #1e2a35;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, Helvetica, sans-serif;
+    font-size: 14px;
+    line-height: 1.55;
+    color-scheme: light;
+}
+
+/* ─── Toolbar ────────────────────────────────────────── */
+.toolbar {
+    max-width: 740px;
+    margin: 0 auto 14px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.toolbarLabel {
+    color: #5a6573;
+    font-size: 13px;
+}
+
+.printBtn {
+    padding: 9px 18px;
+    border: none;
+    border-radius: 6px;
+    background: #1a3350;
+    color: #fff;
+    font: inherit;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: background 0.15s;
+}
+
+.printBtn:hover {
+    background: #254d78;
+}
+
+.printBtn:focus-visible {
+    outline: 3px solid #6b9dc8;
+    outline-offset: 3px;
+}
+
+/* ─── Document card ──────────────────────────────────── */
+.document {
+    max-width: 740px;
+    margin: 0 auto;
+    padding: 40px 44px 36px;
+    background: #fff;
+    box-shadow: 0 2px 12px rgb(0 0 0 / 10%), 0 1px 3px rgb(0 0 0 / 6%);
+    overflow-wrap: anywhere;
+}
+
+/* ─── Header ─────────────────────────────────────────── */
+.header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 24px;
+    padding-bottom: 20px;
+    border-bottom: 2px solid #1a3350;
+    break-inside: avoid;
+}
+
+.headerLeft {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.brand {
+    color: #1a3350;
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 3px;
+}
+
+.page .title {
+    font-size: 24px;
+    font-weight: 700;
+    line-height: 1.2;
+    color: #1e2a35;
+}
+
+.headerRight {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 8px;
+    flex-shrink: 0;
+    text-align: right;
+}
+
+.refRow {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 2px;
+}
+
+.refLabel {
+    color: #6b7785;
+    font-size: 11px;
+}
+
+.refNum {
+    font-size: 19px;
+    font-weight: 700;
+    color: #1a3350;
+    line-height: 1.2;
+}
+
+.badge {
+    display: inline-block;
+    padding: 3px 8px;
+    border: 1px solid #9aaabb;
+    border-radius: 3px;
+    color: #3e5060;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.6px;
+    text-transform: uppercase;
+    white-space: nowrap;
+}
+
+/* ─── Property block ─────────────────────────────────── */
+.propertyBlock {
+    padding: 18px 16px;
+    margin: 20px 0 0;
+    background: #f4f6f8;
+    border-left: 3px solid #1a3350;
+    break-inside: avoid;
+}
+
+.page .propertyName {
+    font-size: 18px;
+    font-weight: 700;
+    color: #1e2a35;
+    line-height: 1.25;
+}
+
+.page .address {
+    margin-top: 4px;
+    color: #5a6573;
+    font-size: 13px;
+}
+
+/* ─── Rule ───────────────────────────────────────────── */
+.rule {
+    border: none;
+    border-top: 1px solid #dce1e7;
+    margin: 0;
+}
+
+/* ─── Generic section ────────────────────────────────── */
+.section {
+    padding: 18px 0;
+    break-inside: avoid;
+    page-break-inside: avoid;
+}
+
+.page .sectionHeading {
+    margin-bottom: 12px;
+    font-size: 11px;
+    font-weight: 700;
+    color: #6b7785;
+    text-transform: uppercase;
+    letter-spacing: 0.7px;
+}
+
+/* ─── Two-column grid ────────────────────────────────── */
+.grid2 {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0 32px;
+}
+
+/* ─── Parties ────────────────────────────────────────── */
+.partyCol {
+    padding: 0;
+}
+
+.fieldLabel {
+    color: #6b7785;
+    font-size: 11px;
+    font-weight: 600;
+    margin-bottom: 3px;
+}
+
+.page .fieldValue {
+    font-size: 15px;
+    font-weight: 600;
+    color: #1e2a35;
+}
+
+/* ─── Dates ──────────────────────────────────────────── */
+.dateValue {
+    font-size: 15px;
+    font-weight: 600;
+    color: #1e2a35;
+    margin-top: 3px;
+}
+
+/* ─── Financial table ────────────────────────────────── */
+.finTable {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.finTh {
+    padding: 7px 10px;
+    border-bottom: 1px solid #c8d0d9;
+    background: #f4f6f8;
+    color: #6b7785;
+    font-size: 11px;
+    font-weight: 700;
+    text-align: left;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.finThRight {
+    text-align: right;
+}
+
+.finRow {
+    border-bottom: 1px solid #eaecf0;
+    break-inside: avoid;
+    page-break-inside: avoid;
+}
+
+.finRow:last-child {
+    border-bottom: none;
+}
+
+.finTd {
+    padding: 11px 10px;
+    vertical-align: middle;
+}
+
+.finDesc {
+    display: block;
+    font-size: 14px;
+    font-weight: 600;
+    color: #1e2a35;
+}
+
+.finSub {
+    display: block;
+    font-size: 11px;
+    color: #6b7785;
+    margin-top: 1px;
+}
+
+.finAmount {
+    text-align: right;
+    font-size: 16px;
+    font-weight: 700;
+    color: #1a3350;
+    white-space: nowrap;
+}
+
+/* ─── Signatures ─────────────────────────────────────── */
+.sigSection {
+    break-inside: avoid;
+    page-break-inside: avoid;
+}
+
+.sigCol {
+    padding-top: 4px;
+}
+
+.sigSpace {
+    height: 52px;
+}
+
+.sigLine {
+    border-top: 1px solid #3e5060;
+    margin-bottom: 8px;
+}
+
+.sigName {
+    font-size: 13px;
+    font-weight: 600;
+    color: #1e2a35;
+}
+
+.sigRole {
+    font-size: 11px;
+    color: #6b7785;
+    margin-top: 1px;
+}
+
+.sigDateLine {
+    margin-top: 14px;
+    font-size: 11px;
+    color: #6b7785;
+}
+
+/* ─── Footer ─────────────────────────────────────────── */
+.footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 16px;
+    padding-top: 14px;
+    border-top: 1px solid #dce1e7;
+    color: #8a95a0;
+    font-size: 10px;
+    break-inside: avoid;
+}
+
+.footerBrand {
+    color: #1a3350;
+    font-size: 10px;
+    letter-spacing: 1.5px;
+    font-weight: 800;
+    white-space: nowrap;
+}
+
+/* ─── Narrow screens ─────────────────────────────────── */
+@media screen and (max-width: 600px) {
+    .page {
+        padding: 16px 12px 32px;
+    }
+
+    .document {
+        padding: 28px 22px 28px;
+    }
+
+    .header,
+    .footer {
+        flex-direction: column;
+        gap: 12px;
+    }
+
+    .headerRight {
+        align-items: flex-start;
+        text-align: left;
+    }
+
+    .grid2 {
+        grid-template-columns: 1fr;
+        gap: 16px;
+    }
+
+    .toolbar {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .printBtn {
+        width: 100%;
+        text-align: center;
+    }
+}
+
+/* ─── Print ──────────────────────────────────────────── */
+@page {
+    size: A4;
+    margin: 18mm 16mm;
+}
+
+@media print {
+    .page {
+        min-height: auto;
+        padding: 0;
+        background: #fff;
+        font-size: 12px;
+    }
+
+    .toolbar {
+        display: none;
+    }
+
+    .document {
+        max-width: none;
+        margin: 0;
+        padding: 0;
+        box-shadow: none;
+    }
+
+    .propertyBlock {
+        /* Keep background when background graphics printing is on */
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+    }
+
+    .finTable {
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+    }
+
+    .finTh {
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+    }
+
+    .grid2 {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .section {
+        padding: 14px 0;
+    }
+
+    .finRow {
+        break-inside: avoid;
+        page-break-inside: avoid;
+    }
+
+    .sigSection {
+        break-inside: avoid;
+        page-break-inside: avoid;
+    }
+}

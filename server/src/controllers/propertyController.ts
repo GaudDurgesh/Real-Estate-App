@@ -86,18 +86,24 @@ export const getProperties = async (
     }
 
     if (availableFrom && availableFrom !== "any") {
-      const availableFromDate =
-        typeof availableFrom === "string" ? availableFrom : null;
-      if (availableFromDate) {
-        const date = new Date(availableFromDate);
-        if (!isNaN(date.getTime())) {
-          whereConditions.push(Prisma.sql`EXISTS (
-              SELECT 1 FROM "Lease" l 
-              WHERE l."propertyId" = p.id 
-              AND l."startDate" <= ${date.toISOString()}::timestamp
-            )`);
-        }
+      if (typeof availableFrom !== "string") {
+        res.status(400).json({ message: "Invalid available-from date" });
+        return;
       }
+
+      const date = new Date(availableFrom);
+
+      if (isNaN(date.getTime())) {
+        res.status(400).json({ message: "Invalid available-from date" });
+        return;
+      }
+
+      whereConditions.push(Prisma.sql`NOT EXISTS (
+    SELECT 1 FROM "Lease" lease
+    WHERE lease."propertyId" = p.id
+      AND lease."startDate" <= ${date.toISOString()}::timestamp
+      AND lease."endDate" > ${date.toISOString()}::timestamp
+  )`);
     }
 
 
@@ -214,7 +220,7 @@ export const createProperty = async (
       managerCognitoId: _ignoredManagerCognitoId,
       ...propertyData
     } = req.body;
-    
+
     const fullAddress = [address, city, state, postalCode, country]
       .map((value) => String(value ?? "").trim())
       .filter(Boolean)

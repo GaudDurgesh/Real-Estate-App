@@ -11,6 +11,8 @@ import {
 } from "@/state/api";
 import { CircleCheckBig, Download, File, Hospital } from "lucide-react";
 import Link from "next/link";
+import { printAgreement } from "@/lib/printAgreement";
+import type { Application } from "@/types/prismaTypes";
 import React, { useState } from "react";
 
 const Applications = () => {
@@ -36,6 +38,35 @@ const Applications = () => {
     await updateApplicationStatus({ id, status });
   };
 
+  const handleDownloadAgreement = (application: Application) => {
+    if (application.status !== "Approved" || !application.lease) {
+      return;
+    }
+
+    const { property, lease, tenant, manager } = application;
+    const location = property.location;
+
+    printAgreement({
+      leaseId: lease.id,
+      propertyName: property.name,
+      address: [
+        location?.address,
+        location?.city,
+        location?.state,
+        location?.postalCode,
+        location?.country,
+      ]
+        .filter(Boolean)
+        .join(", "),
+      tenantName: tenant?.name || "Not available",
+      managerName: manager?.name || "Not available",
+      rent: lease.rent,
+      deposit: lease.deposit,
+      startDate: lease.startDate,
+      endDate: lease.endDate,
+    });
+  };
+
   if (isLoading) return <Loading />;
   if (isError || !applications) return <div>Error fetching applications</div>;
 
@@ -43,7 +74,7 @@ const Applications = () => {
     if (activeTab === "all") return true;
     return application.status.toLowerCase() === activeTab;
   });
-   
+
   return (
     <div className="dashboard-container">
       <Header
@@ -77,13 +108,12 @@ const Applications = () => {
                   <div className="flex justify-between gap-5 w-full pb-4 px-4">
                     {/* Colored Section Status */}
                     <div
-                      className={`p-4 text-green-700 grow ${
-                        application.status === "Approved"
-                          ? "bg-green-100"
-                          : application.status === "Denied"
+                      className={`p-4 text-green-700 grow ${application.status === "Approved"
+                        ? "bg-green-100"
+                        : application.status === "Denied"
                           ? "bg-red-100"
                           : "bg-yellow-100"
-                      }`}
+                        }`}
                     >
                       <div className="flex flex-wrap items-center">
                         <File className="w-5 h-5 mr-2 flex-shrink-0" />
@@ -96,13 +126,12 @@ const Applications = () => {
                         </span>
                         <CircleCheckBig className="w-5 h-5 mr-2 flex-shrink-0" />
                         <span
-                          className={`font-semibold ${
-                            application.status === "Approved"
-                              ? "text-green-800"
-                              : application.status === "Denied"
+                          className={`font-semibold ${application.status === "Approved"
+                            ? "text-green-800"
+                            : application.status === "Denied"
                               ? "text-red-800"
                               : "text-yellow-800"
-                          }`}
+                            }`}
                         >
                           {application.status === "Approved" &&
                             "This application has been approved."}
@@ -127,8 +156,13 @@ const Applications = () => {
                       </Link>
                       {application.status === "Approved" && (
                         <button
-                          className={`bg-white border border-gray-300 text-gray-700 py-2 px-4
-                          rounded-md flex items-center justify-center hover:bg-primary-700 hover:text-primary-50`}
+                          type="button"
+                          onClick={() => handleDownloadAgreement(application)}
+                          disabled={!application.lease}
+                          className="bg-white border border-gray-300 text-gray-700 py-2 px-4
+      rounded-md flex items-center justify-center
+      enabled:hover:bg-primary-700 enabled:hover:text-primary-50
+      disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                           <Download className="w-5 h-5 mr-2" />
                           Download Agreement

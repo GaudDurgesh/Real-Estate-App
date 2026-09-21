@@ -25,7 +25,7 @@ export function cleanParams(params: Record<string, any>): Record<string, any> {
   return Object.fromEntries(
     Object.entries(params).filter(
       (
-        [_, value] 
+        [_, value]
       ) =>
         value !== undefined &&
         value !== "any" &&
@@ -42,7 +42,8 @@ type MutationMessages = {
 
 export const withToast = async <T>(
   mutationFn: Promise<T>,
-  messages: Partial<MutationMessages>
+  messages: Partial<MutationMessages>,
+  rethrow = true,
 ) => {
   const { success, error } = messages;
 
@@ -52,7 +53,7 @@ export const withToast = async <T>(
     return result;
   } catch (err) {
     if (error) toast.error(error);
-    throw err;
+    if (rethrow) throw err;
   }
 };
 
