@@ -28,7 +28,7 @@ export const listApplications = async (
             managerCognitoId: req.user.id,
           },
         };
-        
+
     const applications = await prisma.application.findMany({
       where: whereClause,
       include: {
@@ -91,168 +91,287 @@ export const createApplication = async (
 
     const tenantCognitoId = req.user.id;
     const {
-      applicationDate,
-      propertyId,
+      propertyId: rawPropertyId,
       name,
       email,
       phoneNumber,
       message,
     } = req.body;
 
-    const property = await prisma.property.findUnique({
-      where: { id: propertyId },
-      select: { pricePerMonth: true, securityDeposit: true },
-    });
+    const propertyId = Number(rawPropertyId);
 
-    if (!property) {
-      res.status(404).json({ message: "Property not found" });
+    if (!Number.isSafeInteger(propertyId) || propertyId <= 0) {
+      res.status(400).json({ message: "Invalid property ID" });
       return;
     }
 
-    const newApplication = await prisma.application.create({
-      data: {
-        applicationDate: new Date(applicationDate),
-        status: "Pending",
-        name,
-        email,
-        phoneNumber,
-        message,
-        property: {
-          connect: { id: propertyId },
-        },
-        tenant: {
-          connect: { cognitoId: tenantCognitoId },
-        },
-      },
-      include: {
-        property: true,
-        tenant: true,
-        lease: true,
-      },
-    });
+    const result = await prisma.$transaction(
+      async (tx) => {
+        // Same property ki submission requests ko serialize karta hai.
+        const properties = await tx.$queryRaw<{ id: number }[]>`
+          SELECT id
+          FROM "Property"
+          WHERE id = ${propertyId}
+          FOR UPDATE
+        `;
 
-    res.status(201).json(newApplication);
+        if (properties.length === 0) {
+          return {
+            error: "Property not found",
+            status: 404,
+          };
+        }
+
+        const pendingApplication = await tx.application.findFirst({
+          where: {
+            propertyId,
+            tenantCognitoId,
+            status: "Pending",
+          },
+          select: { id: true },
+        });
+
+        if (pendingApplication) {
+          return {
+            error: "You already have a pending application for this property.",
+            status: 409,
+          };
+        }
+
+        const existingLease = await tx.lease.findFirst({
+          where: {
+            propertyId,
+            tenantCognitoId,
+            endDate: { gt: new Date() },
+          },
+          select: { id: true },
+        });
+
+        if (existingLease) {
+          return {
+            error: "You already have a current or upcoming lease for this property.",
+            status: 409,
+          };
+        }
+
+        const application = await tx.application.create({
+          data: {
+            applicationDate: new Date(),
+            status: "Pending",
+            name,
+            email,
+            phoneNumber,
+            message,
+            property: {
+              connect: { id: propertyId },
+            },
+            tenant: {
+              connect: { cognitoId: tenantCognitoId },
+            },
+          },
+          include: {
+            property: true,
+            tenant: true,
+            lease: true,
+          },
+        });
+
+        return { application };
+      },
+      {
+        isolationLevel: "ReadCommitted",
+      },
+    );
+
+    if (result.status !== undefined) {
+      res.status(result.status).json({ message: result.error });
+      return;
+    }
+
+    res.status(201).json(result.application);
   } catch (error: any) {
-    res
-      .status(500)
-      .json({ message: `Error creating application: ${error.message}` });
+    res.status(500).json({
+      message: `Error creating application: ${error.message}`,
+    });
   }
 };
+
 
 export const updateApplicationStatus = async (
   req: Request,
   res: Response,
 ): Promise<void> => {
   try {
-    const { id } = req.params;
-    const { status } = req.body;
-    if (status !== "Approved" && status !== "Denied") {
-      res.status(400).json({ message: "Invalid application status" });
-      return;
-    }
-    console.log("status:", status);
-
-    const application = await prisma.application.findUnique({
-      where: { id: Number(id) },
-      include: {
-        property: true,
-        tenant: true,
-      },
-    });
-
-    if (!application) {
-      res.status(404).json({ message: "Application not found." });
-      return;
-    }
-
     if (!req.user) {
       res.status(401).json({ message: "Unauthorized" });
       return;
     }
 
-    if (application.property.managerCognitoId !== req.user.id) {
-      res.status(403).json({
-        message: "You can only manage applications for your own properties.",
-      });
+    const managerCognitoId = req.user.id;
+    const applicationId = Number(req.params.id);
+    const { status } = req.body;
+
+    if (!Number.isSafeInteger(applicationId) || applicationId <= 0) {
+      res.status(400).json({ message: "Invalid application ID" });
       return;
     }
 
-    const wasUpdated = await prisma.$transaction(async (tx) => {
-      // Sirf Pending application ka decision ek baar save hoga.
-      const result = await tx.application.updateMany({
-        where: {
-          id: application.id,
-          status: "Pending",
-        },
-        data: { status },
-      });
+    if (status !== "Approved" && status !== "Denied") {
+      res.status(400).json({ message: "Invalid application status" });
+      return;
+    }
 
-      if (result.count === 0) {
-        return false;
-      }
+    const reference = await prisma.application.findUnique({
+      where: { id: applicationId },
+      select: { propertyId: true },
+    });
 
-      if (status === "Approved") {
-        // Purane code se linked lease bani ho, toh dobara mat banao.
-        let leaseId = application.leaseId;
+    if (!reference) {
+      res.status(404).json({ message: "Application not found" });
+      return;
+    }
 
-        if (leaseId === null) {
-          const startDate = new Date();
-          const endDate = new Date(startDate);
-          endDate.setFullYear(endDate.getFullYear() + 1);
+    const result = await prisma.$transaction(
+      async (tx) => {
+        // Submission aur approval dono same property lock use karte hain.
+        const properties = await tx.$queryRaw<{ id: number }[]>`
+          SELECT id
+          FROM "Property"
+          WHERE id = ${reference.propertyId}
+          FOR UPDATE
+        `;
 
-          const newLease = await tx.lease.create({
-            data: {
-              startDate,
-              endDate,
-              rent: application.property.pricePerMonth,
-              deposit: application.property.securityDeposit,
-              propertyId: application.propertyId,
-              tenantCognitoId: application.tenantCognitoId,
-            },
-          });
-
-          leaseId = newLease.id;
+        if (properties.length === 0) {
+          return { status: 404, error: "Property not found" };
         }
 
-        await tx.property.update({
-          where: { id: application.propertyId },
-          data: {
-            tenants: {
-              connect: { cognitoId: application.tenantCognitoId },
-            },
+        // Lock milne ke baad latest application state read karo.
+        const application = await tx.application.findUnique({
+          where: { id: applicationId },
+          include: {
+            property: true,
+            lease: true,
           },
         });
 
-        await tx.application.update({
-          where: { id: application.id },
-          data: { leaseId },
+        if (!application) {
+          return { status: 404, error: "Application not found" };
+        }
+
+        if (application.property.managerCognitoId !== managerCognitoId) {
+          return {
+            status: 403,
+            error: "You can only manage applications for your own properties.",
+          };
+        }
+
+        if (application.status !== "Pending") {
+          return {
+            status: 409,
+            error: "This application has already been processed.",
+          };
+        }
+
+        let leaseId = application.leaseId;
+
+        if (status === "Approved") {
+          const existingLease = application.lease;
+          const startDate = existingLease
+            ? new Date(existingLease.startDate)
+            : new Date();
+
+          const endDate = existingLease
+            ? new Date(existingLease.endDate)
+            : new Date(startDate);
+
+          if (!existingLease) {
+            endDate.setFullYear(endDate.getFullYear() + 1);
+          }
+
+          if (
+            endDate <= startDate ||
+            endDate <= new Date() ||
+            (existingLease &&
+              (existingLease.propertyId !== application.propertyId ||
+                existingLease.tenantCognitoId !== application.tenantCognitoId))
+          ) {
+            return {
+              status: 409,
+              error: "The linked lease is invalid or expired. Review it before approval.",
+            };
+          }
+
+          const overlappingLease = await tx.lease.findFirst({
+            where: {
+              propertyId: application.propertyId,
+              startDate: { lt: endDate },
+              endDate: { gt: startDate },
+              ...(leaseId !== null ? { id: { not: leaseId } } : {}),
+            },
+            select: { id: true },
+          });
+
+          if (overlappingLease) {
+            return {
+              status: 409,
+              error: "This property already has a lease overlapping this period.",
+            };
+          }
+
+          if (leaseId === null) {
+            const lease = await tx.lease.create({
+              data: {
+                startDate,
+                endDate,
+                rent: application.property.pricePerMonth,
+                deposit: application.property.securityDeposit,
+                propertyId: application.propertyId,
+                tenantCognitoId: application.tenantCognitoId,
+              },
+            });
+
+            leaseId = lease.id;
+          }
+
+          await tx.property.update({
+            where: { id: application.propertyId },
+            data: {
+              tenants: {
+                connect: { cognitoId: application.tenantCognitoId },
+              },
+            },
+          });
+        }
+
+        const updatedApplication = await tx.application.update({
+          where: { id: applicationId },
+          data: {
+            status,
+            ...(status === "Approved" ? { leaseId } : {}),
+          },
+          include: {
+            property: true,
+            tenant: true,
+            lease: true,
+          },
         });
-      }
 
-      return true;
-    });
+        return { application: updatedApplication };
+      },
+      {
+        isolationLevel: "ReadCommitted",
+      },
+    );
 
-    if (!wasUpdated) {
-      res.status(409).json({
-        message: "This application has already been processed.",
-      });
+    if (result.status !== undefined) {
+      res.status(result.status).json({ message: result.error });
       return;
     }
 
-    // Respond with the updated application details
-    const updatedApplication = await prisma.application.findUnique({
-      where: { id: Number(id) },
-      include: {
-        property: true,
-        tenant: true,
-        lease: true,
-      },
-    });
-
-    res.json(updatedApplication);
+    res.json(result.application);
   } catch (error: any) {
-    res
-      .status(500)
-      .json({ message: `Error updating application status: ${error.message}` });
+    res.status(500).json({
+      message: `Error updating application status: ${error.message}`,
+    });
   }
 };

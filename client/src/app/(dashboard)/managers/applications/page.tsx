@@ -32,12 +32,17 @@ const Applications = () => {
       skip: !authUser?.cognitoInfo?.userId,
     }
   );
-  const [updateApplicationStatus] = useUpdateApplicationStatusMutation();
+  const [updateApplicationStatus, { isLoading: isUpdatingStatus }] =
+    useUpdateApplicationStatusMutation();
 
-  const handleStatusChange = async (id: number, status: string) => {
+  const handleStatusChange = async (
+    id: number,
+    status: "Approved" | "Denied",
+  ) => {
+    if (isUpdatingStatus) return;
+
     await updateApplicationStatus({ id, status });
   };
-
   const handleDownloadAgreement = (application: Application) => {
     if (application.status !== "Approved" || !application.lease) {
       return;
@@ -171,18 +176,23 @@ const Applications = () => {
                       {application.status === "Pending" && (
                         <>
                           <button
-                            className="px-4 py-2 text-sm text-white bg-green-600 rounded hover:bg-green-500"
-                            onClick={() =>
-                              handleStatusChange(application.id, "Approved")
-                            }
+                            type="button"
+                            disabled={isUpdatingStatus}
+                            className="px-4 py-2 text-sm text-white bg-green-600 rounded
+    enabled:hover:bg-green-500
+    disabled:opacity-50 disabled:cursor-not-allowed"
+                            onClick={() => handleStatusChange(application.id, "Approved")}
                           >
                             Approve
                           </button>
+
                           <button
-                            className="px-4 py-2 text-sm text-white bg-red-600 rounded hover:bg-red-500"
-                            onClick={() =>
-                              handleStatusChange(application.id, "Denied")
-                            }
+                            type="button"
+                            disabled={isUpdatingStatus}
+                            className="px-4 py-2 text-sm text-white bg-red-600 rounded
+    enabled:hover:bg-red-500
+    disabled:opacity-50 disabled:cursor-not-allowed"
+                            onClick={() => handleStatusChange(application.id, "Denied")}
                           >
                             Deny
                           </button>
